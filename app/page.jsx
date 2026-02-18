@@ -190,9 +190,13 @@ function PlayerView({ srv, onVoltar }) {
     setView('player')
   }
 
-  const streamUrl = filmeAtual
+  // Usa o proxy interno para evitar bloqueio Mixed Content (http → https)
+  const rawStreamUrl = filmeAtual
     ? `${srv.baseUrl}movie/${srv.username}/${srv.password}/${filmeAtual.stream_id}.mp4`
     : ''
+  const streamUrl = rawStreamUrl ? `/api/proxy?url=${encodeURIComponent(rawStreamUrl)}` : ''
+  const streamUrlMkv = rawStreamUrl ? `/api/proxy?url=${encodeURIComponent(rawStreamUrl.replace('.mp4', '.mkv'))}` : ''
+  const streamUrlTs  = rawStreamUrl ? `/api/proxy?url=${encodeURIComponent(rawStreamUrl.replace('.mp4', '.ts'))}` : ''
 
   return (
     <div>
@@ -301,20 +305,20 @@ function PlayerView({ srv, onVoltar }) {
             }}
           >
             <source src={streamUrl} type="video/mp4" />
-            <source src={streamUrl.replace('.mp4', '.mkv')} type="video/x-matroska" />
-            <source src={streamUrl.replace('.mp4', '.ts')} type="video/mp2t" />
+            <source src={streamUrlMkv} type="video/x-matroska" />
+            <source src={streamUrlTs} type="video/mp2t" />
           </video>
 
-          <div
+            <div
             id="playerErro"
             className="hidden mt-5 mx-auto max-w-2xl p-5 rounded-2xl border border-red-400 text-left"
             style={{ background: 'rgba(255,71,87,0.1)' }}
           >
-            <p className="text-red-400 mb-3 m-0">⚠️ O navegador bloqueou o vídeo (Mixed Content http/https).</p>
-            <p className="text-white/60 text-sm mb-5">Escolha uma das opções abaixo:</p>
+            <p className="text-red-400 mb-3 m-0">⚠️ Erro ao reproduzir o vídeo.</p>
+            <p className="text-white/60 text-sm mb-5">Tente abrir externamente:</p>
             <div className="flex gap-3 flex-wrap justify-center">
               <a
-                href={streamUrl}
+                href={rawStreamUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="bg-cyan-400 text-black px-5 py-3 rounded-xl font-bold text-sm no-underline"
@@ -322,14 +326,14 @@ function PlayerView({ srv, onVoltar }) {
                 🔗 Abrir em nova aba
               </a>
               <button
-                onClick={() => { window.location.href = `vlc://${streamUrl}` }}
+                onClick={() => { window.location.href = `vlc://${rawStreamUrl}` }}
                 className="px-5 py-3 rounded-xl font-bold text-sm cursor-pointer border border-orange-400 text-orange-400"
                 style={{ background: 'rgba(255,165,0,0.15)' }}
               >
                 🎬 Abrir no VLC
               </button>
               <button
-                onClick={() => navigator.clipboard.writeText(streamUrl).then(() => alert('✅ Link copiado!'))}
+                onClick={() => navigator.clipboard.writeText(rawStreamUrl).then(() => alert('✅ Link copiado!'))}
                 className="px-5 py-3 rounded-xl font-bold text-sm cursor-pointer text-white border"
                 style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)' }}
               >
@@ -347,7 +351,7 @@ function PlayerView({ srv, onVoltar }) {
               ← Voltar para Filmes
             </button>
             <a
-              href={streamUrl}
+              href={rawStreamUrl}
               target="_blank"
               rel="noreferrer"
               className="px-6 py-3 rounded-xl font-semibold text-cyan-400 border border-cyan-400 no-underline transition-all hover:bg-cyan-400 hover:text-black"
